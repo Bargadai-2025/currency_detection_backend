@@ -35,3 +35,6 @@ class PreProcessing:
         white_bg.save(output_path)
         
         return output_path
+
+#     74.220.48.0/24
+# 74.220.56.0/24
