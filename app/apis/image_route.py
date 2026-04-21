@@ -3,24 +3,27 @@ from app.ml.postprocessing import PostProcessing
 from app.ml.inference import Inference
 from app.utils.config import INPUT_DIR, OUTPUT_DIR, VALUE_MAP, MIME_TYPES
 
-from fastapi import APIRouter, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, HTTPException, status, UploadFile, File, Request
 from pathlib import Path
 from collections import Counter
 
 import os
 import uuid
+import cv2
 import shutil
+import numpy as np
 
 router = APIRouter(prefix='/v1',tags=['Items'])
-preprocess = PreProcessing()
-postprocess = PostProcessing()
-inference = Inference()
 
 @router.post('/predict')
 async def predict(
+    request: Request,
     file: UploadFile = File(...),
     conf: float = 0.5    
 ):
+    preprocess = request.app.state.preprocess
+    postprocess = request.app.state.postprocess
+    inference = request.app.state.inference
 
     conf = max(0.05, min(0.95, float(conf)))
     
@@ -41,7 +44,7 @@ async def predict(
     if len(content) > 5 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="File too large")
 
-    await file.seek(0)
+    # await file.seek(0)
 
     unique_id = str(uuid.uuid4())
     input_path = str(INPUT_DIR / f"{unique_id}_{file.filename}")
@@ -50,7 +53,7 @@ async def predict(
 
     try:
         with open(input_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            buffer.write(content)
 
         preprocess.remove_background_white(Path(input_path), Path(no_bg_path))
         result = inference.model_prediction(no_bg_path)

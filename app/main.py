@@ -1,12 +1,30 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
 from fastapi.middleware.cors import CORSMiddleware
-from app.apis.items import router
-# from app.utils.config import MODEL_URL
-# from ultralytics import YOLO
+from app.apis.image_route import router
+from app.ml.inference import Inference
+from app.ml.postprocessing import PostProcessing
+from app.ml.preprocessing import PreProcessing
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Initializing components...")
+
+    app.state.preprocess = PreProcessing()
+    app.state.postprocess = PostProcessing()
+    app.state.inference = Inference()
+
+    print("All components loaded")
+
+    yield 
+
+    print("Shutting down...")
 
 app =FastAPI(
     title='Currency Detection Backend',
-    version='1.0.0'
+    version='1.0.0',
+    lifespan=lifespan
 )
 
 app.add_middleware(

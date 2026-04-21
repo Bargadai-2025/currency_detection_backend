@@ -21,15 +21,18 @@ class Inference:
 
     def model_prediction(
         self, 
-        image_path: str
+        image: str
     ):
         try:
             model = self._get_model()
             results = model.predict(
-                source=image_path,
+                source=image,
                 conf=0.4,
                 iou=0.45,
-                task='detect'
+                device='cpu',
+                imgsz=416,
+                task='detect',
+                verbose=False
             )
         except Exception as e:
             import traceback
